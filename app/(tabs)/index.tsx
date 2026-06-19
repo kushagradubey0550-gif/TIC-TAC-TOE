@@ -1,98 +1,245 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View, Text, Animated } from 'react-native';
+import { useState, useRef } from 'react';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+
+const Cell = ({ value, onPress }: { value: string, onPress: () => void }) => {
+  return (
+    <View style={styles.cell}>
+      <TouchableOpacity style={styles.cell} onPress={onPress}>
+        <Text style={styles.cellText}>{value}</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [board, setBoard] = useState(Array(9).fill(''));
+  const [currentPlayer, setCurrentPlayer] = useState('X');
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const [winner, setWinner] = useState('');
+  const [showWinner, setShowWinner] = useState(false);
+
+  const winningCombinations = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6]
+  ];
+  const resetGame = () => {
+    setBoard(Array(9).fill(''));
+    setCurrentPlayer('X');
+    setWinner('');
+    setShowWinner(false);
+    slideAnim.setValue(-200);
+  };
+  const handlePress = (index: number) => {
+    if (board[index] != '') {
+      return;
+    }
+    else {
+      const newBoard = [...board]
+      newBoard[index] = currentPlayer
+      setBoard(newBoard)
+      setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X')
+      for (let combination of winningCombinations) {
+        const [a, b, c] = combination;
+        if (newBoard[a] && newBoard[a] === newBoard[b] && newBoard[a] === newBoard[c]) {
+          setWinner(newBoard[a]);
+          setShowWinner(true);
+
+          Animated.spring(slideAnim, {
+            toValue: 60,
+            useNativeDriver: false,
+          }).start();
+          return;
+        }
+        if (!newBoard.includes('')) {
+            setWinner('Draw');
+            setShowWinner(true);
+          Animated.spring(slideAnim, {
+            toValue: 60,
+            useNativeDriver: false,
+          }).start();
+          // resetGame();
+          // return;
+        }
+
+      }
+    }
+  };
+  const slideAnim = useRef( 
+  new Animated.Value(-200)
+  ).current;
+
+  
+
+
+  return (
+    
+    <View style={styles.container}>
+      <Text style={styles.title}>Tic Tac Toe</Text>
+      {showWinner && (
+       <Animated.View
+        style={[
+        styles.winnerBanner,
+        { top: slideAnim }
+       ]}
+       >
+       <Text style={styles.winnerText}>
+        {winner === 'Draw'
+          ? "🤝 It's a Draw!"
+          : `🎉 Player ${winner} Wins!`}
+       </Text>
+
+        <TouchableOpacity
+        style={styles.playAgainBtn}
+        onPress={() => {
+            resetGame();
+            setWinner('');
+            setShowWinner(false);
+            slideAnim.setValue(-200);
+          }}
+        >
+          <Text style={styles.playAgainText}>
+            Play Again
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+      )}
+      <View style={styles.board}>
+
+        {board.map((cell, index) => (
+          <Cell
+            key={index}
+            value={cell}
+            onPress={() => handlePress(index)}
+          />
+        ))}
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={resetGame}
+        >
+          <Text style={styles.resetButtonText}>Restart Game</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.turnText}>
+        Current Turn: {currentPlayer}
+      </Text>
+    </View>
+    
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#121212',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+
+  board: {
+    width: 330,
+    height: 330,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 20,
+    padding: 6,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+
+  cell: {
+    width: 100,
+    height: 100,
+    margin: 3,
+    backgroundColor: '#2C2C2C',
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
   },
+
+  cellText: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 30,
+  },
+
+  turnText: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginTop: 100,
+  },
+  resetButton: {
+    marginTop: 25,
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+
+  resetButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  winnerBanner: {
+  position: 'absolute',
+  top: 60,
+  width: '90%',
+  backgroundColor: '#1E1E1E',
+  padding: 20,
+  borderRadius: 16,
+  alignItems: 'center',
+  elevation: 10,
+  zIndex: 100,
+},
+
+winnerText: {
+  color: '#fff',
+  fontSize: 24,
+  fontWeight: 'bold',
+},
+
+playAgainBtn: {
+  marginTop: 15,
+  backgroundColor: '#4CAF50',
+  paddingHorizontal: 20,
+  paddingVertical: 10,
+  borderRadius: 8,
+},
+
+playAgainText: {
+  color: '#fff',
+  fontWeight: 'bold',
+},
 });
