@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
@@ -48,3 +49,7 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+=======
+# TIC-TAC-TOE
+A simple and interactive Tic Tac Toe game built with React Native. This project demonstrates the use of React Hooks, state management, conditional rendering, and animations to create a smooth mobile gaming experience.
+>>>>>>> 431e7b6c25d1e6edde4ed586ea6c36dbc93f744d
